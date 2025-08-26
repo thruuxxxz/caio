@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>arquivo confidencial</title>
+  <style>
+    :root{
+      --bg:#000;
+      --fg:#00ff88;
+      --fg-dim:#00c06a;
+    }
+    body{
+      margin:0;
+      font:18px/1.6 monospace;
+      color:var(--fg);
+      background:#000;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      overflow:hidden;
+    }
+    canvas#matrix{
+      position:fixed;
+      top:0;left:0;
+      width:100%;height:100%;
+      z-index:0;
+    }
+    .panel{
+      position:relative;
+      z-index:1;
+      width:90%;
+      height:70vh;
+      border:1px solid var(--fg-dim);
+      padding:20px;
+      border-radius:6px;
+      background:#000; /* painel preto sólido */
+      overflow:auto;
+      display:none;
+    }
+    .panel.active{ display:block; }
+    .line{ margin:6px 0 }
+    .caret::after{
+      content:"▌";
+      animation:blink 1s steps(1) infinite;
+    }
+    @keyframes blink{50%{opacity:0}}
+    .btn{
+      margin-top:30px;
+      padding:10px 20px;
+      font:16px monospace;
+      background:#001b12;
+      color:var(--fg);
+      border:1px solid var(--fg-dim);
+      cursor:pointer;
+      border-radius:4px;
+      transition:.2s;
+    }
+    .btn:hover{box-shadow:0 0 10px var(--fg)}
+
+    /* Estilo do campo de senha */
+    .password-container{
+      margin-top:20px;
+      display:flex;
+      justify-content:center;
+      gap:10px;
+    }
+    .password-container input{
+      padding:8px 12px;
+      font:16px monospace;
+      border:1px solid var(--fg-dim);
+      border-radius:4px;
+      background:#000;
+      color:var(--fg);
+    }
+    .password-container input::placeholder{
+      color:var(--fg-dim);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix"></canvas>
+
+  <!-- Página 1 -->
+  <div class="panel active" data-typer>
+    <div class="line" data-text="> Conexão estabelecida..."></div>
+    <div class="line" data-text="> Iniciando transmissão desconhecida."></div>
+    <div class="line" data-text="> Este arquivo é dedicado somente a você."></div>
+
+    <!-- Campo de senha só na primeira página -->
+    <div class="password-container">
+      <input type="password" id="userPassword" placeholder="Digite seu nome..." />
+      <button class="btn" onclick="submitPassword()">Enviar ➜</button>
+    </div>
+  </div>
+
+  <!-- Página 2 -->
+  <div class="panel" data-typer>
+    <div class="line" data-text="> Amor, você merece todas as estrelhas do céu, você é perfeita."></div>
+    <div class="line" data-text="> aqui escrevi um pouco sobre o que sinto, e algumas declarações de amor."></div>
+    <div class="line" data-text=">"Eu te amo.
+Todos os dias agradeço por ter alguém tão incrível ao meu lado, você é perfeita. Nunca vou me cansar de dizer isso.
+Sei que ainda tenho muito a melhorar, e te prometo que vou sempre buscar ser o melhor de mim, porque você é a razão da minha evolução.
+Você é a mulher da minha vida, minha inspiração, meu motivo de sorrir e de acreditar mais no amanhã.
+O amor que sinto por você é tão imenso que nem cabe no meu peito, eu viro um baiacu de tanto amor no meu peito.
+Você é tudo para mim, meu tesouro mais precioso, minha pitica.></div>
+
+    <button class="btn" onclick="nextPage()">Avançar ➜</button>
+  </div>
+
+  <!-- Página 3 -->
+  <div class="panel" data-typer>
+    <div class="line" data-text="> nunca achei que encontraria uma pessoa tao incrivel na minha vida..."></div>
+    <div class="line" data-text="> eu te amo cada dia mais, meu amor por você é infinito."></div>
+    <div class="line" data-text="> Você é tudo pra mim. Muito obrigado por sempre estar comigo, me apoiar, me suportar.
+  Meu amor por você ultrapassa todas as barreiras, eu te amo igual um idiota, Ainda temos muito o que viver, mas saiba que quero viver todos esses momentos contigo, muito obrigado por me trazer segurança para ser quem sou, obrigado por me tratar com muito amor e respeito, obrigado por tudo."></div>
+    <button class="btn" onclick="nextPage()">Avançar ➜</button>
+  </div>
+
+  <!-- Página 4 -->
+  <div class="panel" data-typer>
+    <div class="line" data-text="> Não existem problemas quando estou ao seu lado."></div>
+    <div class="line" data-text="> Só amor, tranquilidade e paz."></div>
+    <div class="line" data-text="> Você é o amor da minha vida."></div>
+    <button class="btn" onclick="nextPage()">Avançar ➜</button>
+  </div>
+
+  <!-- Página 5 -->
+  <div class="panel" data-typer>
+    <div class="line" data-text="> Transmissão finalizada."></div>
+    <div class="line" data-text="> Conclusão: se você recebeu este link, saiba que o autor desta transmissão te ama muito muuito muuuuuuuuito muuuuuuuuuuuuuuuuuito."></div>
+    <div class="line" data-text="> o amor não se vê com os olhos, mas com a alma."></div>
+  </div>
+
+  <script>
+    // Sons
+    const typeSound = new Audio("type.wav");
+    const enterSound = new Audio("enter.wav");
+
+    // Digitação
+    function typewrite(container){
+      if(!container) return;
+      const lines = [...container.querySelectorAll(".line")];
+      let totalDelay = 0;
+      lines.forEach(line=>{
+        const full = line.dataset.text;
+        line.textContent = "";
+        line.classList.add("caret");
+        let i=0;
+        setTimeout(function tick(){
+          line.textContent += full.charAt(i);
+          if(typeSound){ typeSound.currentTime=0; typeSound.play().catch(()=>{}); }
+          i++;
+          if(i<full.length){
+            setTimeout(tick, 50+Math.random()*60);
+          }else{
+            line.classList.remove("caret");
+          }
+        }, totalDelay);
+        totalDelay += full.length*50 + 400;
+      });
+    }
+
+    let current = 0;
+    const panels = document.querySelectorAll(".panel");
+    typewrite(panels[current]);
+
+    function nextPage(){
+      if(enterSound){ enterSound.currentTime=0; enterSound.play().catch(()=>{}); }
+      panels[current].classList.remove("active");
+      current++;
+      if(current < panels.length){
+        panels[current].classList.add("active");
+        typewrite(panels[current]);
+      }
+    }
+
+    // Função para o campo de senha
+    function submitPassword(){
+      const input = document.getElementById("userPassword");
+      const value = input.value.trim();
+      console.log("Nome digitado:", value); // só referência no console
+      input.value = "";
+      if(enterSound){ enterSound.currentTime = 0; enterSound.play().catch(()=>{}); }
+      nextPage();
+    }
+
+    // Chuva Matrix suave
+    const canvas = document.getElementById("matrix");
+    const ctx = canvas.getContext("2d");
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()";
+    const fontSize = 18;
+    const columns = Math.floor(width / fontSize);
+    const drops = Array(columns).fill(0);
+
+    function drawMatrix(){
+      ctx.fillStyle = "rgba(0,0,0,0.2)";  // fundo rastro mais escuro
+      ctx.fillRect(0,0,width,height);
+      ctx.fillStyle = "rgba(0,255,136,0.2)"; // letras verdes mais suaves
+      ctx.font = fontSize + "px monospace";
+      for(let i=0; i<drops.length; i++){
+        const text = letters.charAt(Math.floor(Math.random()*letters.length));
+        ctx.fillText(text, i*fontSize, drops[i]*fontSize);
+        if(drops[i]*fontSize > height && Math.random() > 0.975){ drops[i]=0; }
+        drops[i]++;
+      }
+    }
+    setInterval(drawMatrix,50);
+    window.addEventListener("resize",()=>{
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+  </script>
+</body>
+</html>
